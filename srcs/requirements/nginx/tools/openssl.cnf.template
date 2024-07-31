@@ -1,0 +1,14 @@
+[req]
+default_bits        = 2048
+keyfile     = /etc/ssl/private/server.key
+distinguished_name  = req_distinguished_name
+prompt			= no
+
+[req_distinguished_name]
+countryName=		FR
+stateOrProvinceName=	CHARENTE
+localityName=		ANGOULEME
+organizationName=	42
+organizationalUnitName=	C1
+commonName=		    $DOMAIN_NAME
+emailAddress=		$DOMAIN_NAME@oneonmail.com

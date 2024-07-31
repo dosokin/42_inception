@@ -1,0 +1,135 @@
+
+services:
+  mariadb:
+    container_name: mariadb
+    build: requirements/mariadb
+    expose:
+      - "3306"
+    volumes:
+      - mariadbvolume:/var/lib/mysql
+    networks:
+      - inception_network
+    restart: always
+    environment:
+      - MYSQL_USER
+      - MYSQL_PASSWORD
+      - WP_DB_NAME
+    image: mariadb
+  wordpress:
+    container_name: wordpress
+    build:
+      context: requirements/wordpress
+      args:
+        DN: ${DOMAIN_NAME}
+    volumes:
+      - wordpressvolume:/var/www/html/${DOMAIN_NAME}
+      - adminervolume:/var/www/html/adminer
+    expose:
+      - "9000"
+    networks:
+      - inception_network
+    restart: always
+    env_file: ".env"
+    image: wordpress
+  nginx:
+    container_name: nginx
+    build:
+      context: requirements/nginx
+      args:
+        DN: ${DOMAIN_NAME}
+    ports:
+      - "443:443"
+    volumes:
+      - wordpressvolume:/var/www/html/${DOMAIN_NAME}
+    networks:
+      - inception_network
+    restart: always
+    environment:
+      - DOMAIN_NAME
+    image: nginx
+  redis:
+    container_name: redis
+    build: requirements/bonus/redis
+    expose:
+      - "6379"
+    networks:
+      - inception_network
+    image: redis
+    restart: always
+  ftp:
+    container_name: ftp
+    build: requirements/bonus/ftp
+    expose:
+      - "21:21"
+    networks:
+      - inception_network
+    volumes:
+      - wordpressvolume:/home/user/ftp
+    image: ftp
+    restart: always
+  nginx_bonus:
+    container_name: nginx_bonus
+    build:
+      context: requirements/bonus/nginx_bonus
+      args:
+        DN: ${DOMAIN_NAME_BONUS}
+    ports:
+      - "800:800"
+    restart: always
+    environment:
+      - DOMAIN_NAME_BONUS
+    image: nginx_bonus
+    networks:
+      - inception_network
+  adminer:
+    container_name: adminer
+    build: requirements/bonus/adminer
+    ports:
+      - "6677:6677"
+    restart: always
+    networks:
+      - inception_network
+    volumes:
+      - adminervolume:/var/www/html/adminer/
+    image: adminer
+  cadvisor:
+    container_name: cadvisor
+    build:
+      context: requirements/bonus/cadvisor
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    ports:
+      - "8080:8080"
+    image: cadvisor
+    restart: always
+    networks:
+      - inception_network
+volumes:
+  mariadbvolume:
+    driver: local
+    driver_opts:
+      type: none
+      o : bind
+      device: /home/dosokin/data/mariadb
+
+  wordpressvolume:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/dosokin/data/wordpress
+
+  adminervolume:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/dosokin/data/adminer
+
+networks:
+  inception_network:
+    driver: bridge
